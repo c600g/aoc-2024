@@ -23,4 +23,9 @@ fn main() {
         s.clear();
     }
     println!("Map is {} cols by {} rows.", cols, rows);
+    // find the guard's initial position
+    let guard = map.iter().position(|&c| c == '^').unwrap();
+    let guard_row = (guard + 1) / cols;
+    let guard_col = (guard + 1) % cols - 1;
+    println!("Guard's position: {} = ({},{})", guard, guard_col, guard_row);
 }
