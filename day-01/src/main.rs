@@ -1,6 +1,5 @@
 use std::fs::File;
-use std::num;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 fn main() {
     let file = File::open("input.txt").unwrap();
     let mut buf = BufReader::new(file);
