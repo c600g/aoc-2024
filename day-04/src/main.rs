@@ -26,6 +26,10 @@ fn main() {
         }
     }
     println!("Part 1 matches: {}", matches);
+
+    // Part 2 - we need to search for X-MAS
+    matches = x_match(&lines);
+    println!("Part 2 matches: {}", matches);
 }
 
 fn is_match(x: usize, y: usize, x_dir: i8, y_dir: i8, word: &str, lines: &Vec<String>) -> i32 {
@@ -70,4 +74,30 @@ fn is_match(x: usize, y: usize, x_dir: i8, y_dir: i8, word: &str, lines: &Vec<St
     } else {
         0
     }
+}
+
+fn x_match(lines: &Vec<String>) -> i32 {
+    let mut matches = 0;
+
+    // loop through each line
+    for (y, line) in lines.iter().enumerate() {
+        // if this is the first or last line, no checks are required
+        if y == 0 || y == lines.len() - 1 {
+            continue;
+        }
+        // loop through each character on the line
+        for x in 0..line.len() {
+            // if this is the first or last character, no checks are required
+            if x == 0 || x == line.len() -1 {
+                continue;
+            }
+            // build up first test
+            let test1 = format!("{}{}{}", lines[y-1].chars().nth(x-1).unwrap(), lines[y].chars().nth(x).unwrap(), lines[y+1].chars().nth(x+1).unwrap());
+            let test2 = format!("{}{}{}", lines[y-1].chars().nth(x+1).unwrap(), lines[y].chars().nth(x).unwrap(), lines[y+1].chars().nth(x-1).unwrap());
+            if ( test1 == "SAM" || test1 == "MAS" ) &&  ( test2 == "SAM" || test2 == "MAS" ) {
+                matches += 1;
+            }
+        }
+    }
+    matches
 }
