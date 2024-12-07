@@ -26,7 +26,7 @@ fn main() {
     // find the guard's initial position
     let guard = map.iter().position(|&c| c == '^').unwrap();
     let (mut guard_col, mut guard_row) = col_row_from_index(guard, cols);
-    
+    let guard_origin = guard;
     // save the guard's path for later analysis
     let mut path: Vec<usize> = Vec::new();
     path.push(guard);
@@ -38,11 +38,76 @@ fn main() {
         }
         path.push(index_from_col_row(guard_col, guard_row, cols));
     }
+    let mut unique = path.clone();
+    unique.sort();
+    unique.dedup();
     println!(
         "Locations visited: {} total, {} unique",
         path.len(),
-        map.iter().filter(|&n| *n == 'X').count()
+        unique.len()
     );
+
+    // now, part 2! Remove guard's origin from list of unique locations,
+    // since we can not place an obstacle there. 
+    unique.retain(|x| *x != guard_origin);
+    let mut blockers = 0_u32;
+    // iterate over all of the unique locations in the guard's path
+    for obs in unique {
+        // place the guard back at the origin and set the obstacle
+        map[guard_origin] = '^';
+        map[obs] = 'O';
+        // transform all 'X's to '.'s
+        for m in 0..map.len() {
+            if map[m] == 'X' {
+                map[m] = '.';
+            }
+        }
+        // test if we have a loop here ...
+        if is_looping(&mut map, cols, rows) {
+            blockers += 1;
+            println!("Loop #{}", blockers);
+            break;
+        }
+        // reset obstacle to clear for next loop
+        map[obs] = '.';
+    }
+    println!("Obstacle locations: {}", blockers);
+}
+
+fn is_looping(map: &mut Vec<char>, cols: usize, rows: usize) -> bool {
+    // get the guard's starting position
+    let mut current = map.iter().position(|&c| c == '^').unwrap();
+    let mut is_loop = false;
+    let mut path: Vec<usize> = Vec::new();
+
+    // ok, we now loop until the guard leaves the map OR we detect a loop
+    loop {
+        let (mut col, mut row) = col_row_from_index(current, cols);
+        if !move_guard(&mut col, &mut row, cols, rows, map) {
+            break;
+        }
+        let next = index_from_col_row(col, row, cols);
+        // now check our stored path to see if we are looping
+        let mut match_current = false;
+        for p in &path {
+            if *p == current {
+                match_current = true;
+            } else if *p == next && match_current {
+                is_loop = true;
+                break;
+            } else {
+                match_current = false;
+            }
+        }
+        path.push(next);
+        if is_loop {
+            print_map(&map, cols);
+            break; 
+        }
+        current = next;
+    }
+    // if we make it this far, then no loop
+    is_loop
 }
 
 fn col_row_from_index(index: usize, cols: usize) -> (usize, usize) {
