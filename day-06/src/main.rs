@@ -25,19 +25,37 @@ fn main() {
     println!("Map is {} cols by {} rows.", cols, rows);
     // find the guard's initial position
     let guard = map.iter().position(|&c| c == '^').unwrap();
-    let mut guard_row = (guard + 1) / cols;
-    let mut guard_col = (guard + 1) % cols - 1;
+    let (mut guard_col, mut guard_row) = col_row_from_index(guard, cols);
+    
+    // save the guard's path for later analysis
+    let mut path: Vec<usize> = Vec::new();
+    path.push(guard);
     // ok, we now loop until the guard leaves the map
     loop {
         if !move_guard(&mut guard_col, &mut guard_row, cols, rows, &mut map) {
             print_map(&map, cols);
             break;
         }
+        path.push(index_from_col_row(guard_col, guard_row, cols));
     }
     println!(
-        "Locations visited: {}",
+        "Locations visited: {} total, {} unique",
+        path.len(),
         map.iter().filter(|&n| *n == 'X').count()
     );
+}
+
+fn col_row_from_index(index: usize, cols: usize) -> (usize, usize) {
+ ((index + 1) % cols - 1, (index + 1) / cols)
+}
+
+fn index_from_col_row(col: usize, row: usize, cols: usize) -> usize {
+    row * cols + col
+}
+
+fn is_blocked(col: usize, row: usize, cols: usize, map: &Vec<char>) ->bool {
+    let c = map[row * cols + col];
+    (c == '#') || (c == 'O')
 }
 
 fn move_guard(
@@ -58,8 +76,7 @@ fn move_guard(
                 return false;
             }
             // make sure the new location sn't blocked
-            let is_blocked = map[(*guard_row - 1) * cols + *guard_col] == '#';
-            if is_blocked {
+            if is_blocked(*guard_col, *guard_row - 1, cols, map) {
                 guard = '>';
             } else {
                 *guard_row -= 1;
@@ -74,8 +91,7 @@ fn move_guard(
                 return false;
             }
             // make sure the new location sn't blocked
-            let is_blocked = map[*guard_row * cols + *guard_col + 1] == '#';
-            if is_blocked {
+            if is_blocked(*guard_col + 1, *guard_row, cols, map) {
                 guard = 'v';
             } else {
                 *guard_col += 1;
@@ -90,8 +106,7 @@ fn move_guard(
                 return false;
             }
             // make sure the new location sn't blocked
-            let is_blocked = map[(*guard_row + 1) * cols + *guard_col] == '#';
-            if is_blocked {
+            if is_blocked(*guard_col, *guard_row + 1, cols, map) {
                 guard = '<';
             } else {
                 *guard_row += 1;
@@ -106,8 +121,7 @@ fn move_guard(
                 return false;
             }
             // make sure the new location sn't blocked
-            let is_blocked = map[*guard_row * cols + *guard_col - 1] == '#';
-            if is_blocked {
+            if is_blocked(*guard_col - 1, *guard_row, cols, map) {
                 guard = '^';
             } else {
                 *guard_col -= 1;
