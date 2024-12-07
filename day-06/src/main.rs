@@ -29,22 +29,30 @@ fn main() {
     let mut guard_col = (guard + 1) % cols - 1;
     // ok, we now loop until the guard leaves the map
     loop {
-        print_map(&map, cols);
         if !move_guard(&mut guard_col, &mut guard_row, cols, rows, &mut map) {
             print_map(&map, cols);
             break;
         }
     }
-    println!("Locations visited: {}", map.iter().filter(|&n| *n == 'X').count());
+    println!(
+        "Locations visited: {}",
+        map.iter().filter(|&n| *n == 'X').count()
+    );
 }
 
-fn move_guard(guard_col: &mut usize, guard_row: &mut usize, cols: usize, rows: usize, map: &mut Vec<char>) -> bool {
+fn move_guard(
+    guard_col: &mut usize,
+    guard_row: &mut usize,
+    cols: usize,
+    rows: usize,
+    map: &mut Vec<char>,
+) -> bool {
     // get the guard character to determine direction of travel
     let mut guard: char = map[*guard_row * cols + *guard_col];
     // mark current location as visited
     map[*guard_row * cols + *guard_col] = 'X';
     loop {
-         if guard == '^' {
+        if guard == '^' {
             if *guard_row == 0 {
                 // we can't move any farther up!
                 return false;
@@ -59,7 +67,7 @@ fn move_guard(guard_col: &mut usize, guard_row: &mut usize, cols: usize, rows: u
                 return true;
             }
         }
-        
+
         if guard == '>' {
             if *guard_col == cols - 1 {
                 // we can't move any farther right!
@@ -107,7 +115,6 @@ fn move_guard(guard_col: &mut usize, guard_row: &mut usize, cols: usize, rows: u
                 return true;
             }
         }
-
     }
 }
 
