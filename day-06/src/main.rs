@@ -53,20 +53,20 @@ fn main() {
     let mut blockers = 0_u32;
     // iterate over all of the unique locations in the guard's path
     for obs in unique {
-        // place the guard back at the origin and set the obstacle
-        map[guard_origin] = '^';
-        map[obs] = 'O';
         // transform all 'X's to '.'s
         for m in 0..map.len() {
-            if map[m] == 'X' {
+            if map[m] == 'X' || map[m] == '^' || map[m] == '>' || map[m] == 'v' || map[m] == '<' || map[m] == '@' {
                 map[m] = '.';
             }
         }
+        // place the guard back at the origin and set the obstacle
+        map[guard_origin] = '^';
+        map[obs] = 'O';
         // test if we have a loop here ...
         if is_looping(&mut map, cols, rows) {
             blockers += 1;
             println!("Loop #{}", blockers);
-            break;
+            //break;
         }
         // reset obstacle to clear for next loop
         map[obs] = '.';
@@ -79,6 +79,9 @@ fn is_looping(map: &mut Vec<char>, cols: usize, rows: usize) -> bool {
     let mut current = map.iter().position(|&c| c == '^').unwrap();
     let mut is_loop = false;
     let mut path: Vec<usize> = Vec::new();
+
+    //println!("Testing:");
+    //print_map(&map, cols);
 
     // ok, we now loop until the guard leaves the map OR we detect a loop
     loop {
@@ -101,6 +104,7 @@ fn is_looping(map: &mut Vec<char>, cols: usize, rows: usize) -> bool {
         }
         path.push(next);
         if is_loop {
+            map[current] = '@';
             print_map(&map, cols);
             break; 
         }
@@ -111,7 +115,7 @@ fn is_looping(map: &mut Vec<char>, cols: usize, rows: usize) -> bool {
 }
 
 fn col_row_from_index(index: usize, cols: usize) -> (usize, usize) {
- ((index + 1) % cols - 1, (index + 1) / cols)
+ (index % cols, index / cols)
 }
 
 fn index_from_col_row(col: usize, row: usize, cols: usize) -> usize {
@@ -133,7 +137,7 @@ fn move_guard(
     // get the guard character to determine direction of travel
     let mut guard: char = map[*guard_row * cols + *guard_col];
     // mark current location as visited
-    map[*guard_row * cols + *guard_col] = 'X';
+    map[*guard_row * cols + *guard_col] = guard;
     loop {
         if guard == '^' {
             if *guard_row == 0 {
