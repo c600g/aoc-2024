@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader};
 enum Ops {
     Add,
     Mul,
+    Cat,
 }
 
 fn main() {
@@ -60,9 +61,10 @@ fn get_arg_ops(argc: usize, arg_ops: &mut Vec<Vec<Vec<Ops>>>) -> &Vec<Vec<Ops>> 
         } else if argc == 2 {
             next.push(vec![Ops::Add]);
             next.push(vec![Ops::Mul]);
+            next.push(vec![Ops::Cat]);
         } else {
             let prev = get_arg_ops(argc - 1, arg_ops);
-            for op in vec![Ops::Add, Ops::Mul] {
+            for op in vec![Ops::Add, Ops::Mul, Ops::Cat] {
                 for oplist in prev {
                     let mut new = oplist.to_vec();
                     new.push(op.clone());
@@ -97,6 +99,7 @@ fn test_ops(sum: usize, args: &Vec<usize>, ops: &Vec<Ops>) -> bool {
 fn eval(op: Ops, arg1: usize, arg2: usize) -> usize {
     match op {
         Ops::Add => arg1 + arg2,
-        Ops::Mul => arg1 * arg2
+        Ops::Mul => arg1 * arg2,
+        Ops::Cat => (arg1.to_string() + &(arg2.to_string())).parse().unwrap()
     }
 }
