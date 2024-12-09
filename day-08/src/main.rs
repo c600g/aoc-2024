@@ -50,7 +50,7 @@ impl Map {
 
     fn print(&self) {
         for (i, c) in self.chars.iter().enumerate() {
-            if i % self.cols == 0 {
+            if i % self.cols == 0 && i !=0 {
                 print!("\n");
             }
             print!("{}", c);
@@ -69,10 +69,13 @@ impl Map {
 
 fn main() {
     let antennas = Map::from_file("test-input.txt");
-    println!("Map is {} cols by {} rows.", antennas.cols, antennas.rows);
+    println!("");
+    println!("Antenna map is {} cols by {} rows.", antennas.cols, antennas.rows);
     antennas.print();
+    println!("");
 
     let antinodes = create_antinodes(antennas);
+    println!("Antinodes map:");
     antinodes.print();
 }
 
