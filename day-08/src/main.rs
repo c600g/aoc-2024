@@ -17,7 +17,7 @@ impl Map {
     }
 
     fn from_file(filename: &str) -> Self {
-        let file = File::open("test-input.txt").unwrap();
+        let file = File::open(filename).unwrap();
         let mut buf = BufReader::new(file);
         //let mut s = String::new();
         let mut chars = Vec::new();
@@ -42,7 +42,7 @@ impl Map {
 
     fn from_cols_rows(cols: usize, rows: usize) -> Self {
         let mut chars: Vec<char> = Vec::new();
-        for i in 0..cols * rows {
+        for _i in 0..cols * rows {
             chars.push('.');
         }
         Self { chars, cols, rows }
@@ -68,10 +68,16 @@ impl Map {
 }
 
 fn main() {
-    let map = Map::from_file("test-input.txt");
-    println!("Map is {} cols by {} rows.", map.cols, map.rows);
-    map.print();
+    let antennas = Map::from_file("test-input.txt");
+    println!("Map is {} cols by {} rows.", antennas.cols, antennas.rows);
+    antennas.print();
 
-    let mut antinodes = Map::from_cols_rows(map.cols, map.rows);
+    let antinodes = create_antinodes(antennas);
     antinodes.print();
+}
+
+fn create_antinodes(antennas: Map) -> Map {
+    // analyze our antenna map to generate the antinodes map
+    let map = Map::from_cols_rows(antennas.cols, antennas.rows);
+    map
 }
