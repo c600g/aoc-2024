@@ -3,7 +3,7 @@ fn main() {
 
     println!("Initial arrangement:");
     println!("{:?}\n", stones);
-    for i in 0..75 {
+    for i in 0..25 {
         blink_stones(&mut stones);
         println!("After {} blink(s):", i + 1);
         println!("{:?}\n", stones.len());
