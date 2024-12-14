@@ -1,4 +1,3 @@
-use std::cmp;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -32,18 +31,18 @@ fn main() {
     let mut total_cost = 0;
     for game in &games {
         let cost = find_cost(&game);
-        println!("{:?} cost is {}", game, cost);
+        //println!("{:?} cost is {}", game, cost);
         total_cost += cost;
     }
     println!("Part 1 total cost: {total_cost}");
-    
+
     // for part 2, we need to adjust all game prize x,y coords to be += 10000000000000
     let mut total_cost = 0;
     for i in 0..games.len() {
         games[i].prize.x += 10000000000000;
         games[i].prize.y += 10000000000000;
         let cost = find_cost(&games[i]);
-        println!("{:?} cost is {}", games[i], cost);
+        //println!("{:?} cost is {}", games[i], cost);
         total_cost += cost;
     }
     println!("Part 2 total cost: {total_cost}");
@@ -96,7 +95,7 @@ fn load_games(path: &str) -> Vec<Game> {
                 //println!("Command: {}, args: {:?}, x: {}, y: {}", v[0], args, x, y);      
             } else {
                 // time to add a new game!
-                let mut game = Game::new(a, b, prize);
+                let game = Game::new(a, b, prize);
                 //println!("{:?}", game);
                 results.push(game);
             }
@@ -114,30 +113,14 @@ fn load_games(path: &str) -> Vec<Game> {
 
 fn find_cost(game: &Game) -> usize {
     let mut result = 0;
-    // a button loop
-    let mut i = 1;
-    loop {
-        let a_pos = Point{ x: game.a.x * i, y: game.a.y * i };
-        if a_pos.x > game.prize.x || a_pos.y > game.prize.y || (result > 0 && i * 3 > result) { break; } 
-        //we can now compute the # of b button presses needed
-        let dx = game.prize.x - a_pos.x;
-        let dy = game.prize.y - a_pos.y;
-        let bx =  dx / game.b.x;
-        let mx = dx % game.b.x;
-        let by = dy / game.b.y;
-        let my = dy % game.b.y;
-        // do we have an exact target point?
-        if bx == by && mx == 0 && my == 0 {
-            let j = bx;
-            let cost = i * 3 + j;
-            if result == 0 {
-                println!("(a,b) = ({},{}) cost is {}", i, j, cost);
-                result = cost;
-            } else {
-                result = cmp::min(result, cost);
-            }
+    // see if we have an integer value for # of A button presses
+    if ( (game.prize.x * game.b.y) as i64 - (game.b.x * game.prize.y) as i64) % ( (game.a.x * game.b.y) as i64 - (game.b.x * game.a.y) as i64 ) == 0 {
+        let i = ( (game.prize.x * game.b.y) as i64 - (game.b.x * game.prize.y) as i64) / ( (game.a.x * game.b.y) as i64 - (game.b.x * game.a.y) as i64 );
+        // do the same for # of B button presses
+        if (game.prize.x as i64 - i * game.a.x as i64) % game.b.x as i64 == 0 {
+            let j = (game.prize.x as i64 - i * game.a.x as i64) / game.b.x as i64;
+            result = (3 * i + j) as usize; 
         }
-        i += 1;
     }
     result
 }
