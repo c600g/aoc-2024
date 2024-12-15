@@ -105,9 +105,30 @@ impl Map {
 fn main() {
     let mut robots = load_robots("input.txt");
     let map = map_robots(&robots);
-    move_robots(&mut robots, 100);
-    let map = map_robots(&robots);
-    quadrant_count(&robots, &map);
+    // part 1 answer - uncomment out the following 4 lines and comment out the remaining
+    // let map = map_robots(&robots);
+    // move_robots(&mut robots, 100);
+    // let map = map_robots(&robots);
+    // quadrant_count(&robots, &map);
+    let mut i = 1;
+    let mut safety = quadrant_count(&robots, &map);
+    loop {
+        let map = map_robots(&robots);
+        move_robots(&mut robots, 1);
+        let map = map_robots(&robots);
+        let new_safety = quadrant_count(&robots, &map);
+        if new_safety < safety {
+            safety = new_safety;
+            map.print();
+            println!("");
+            println!("new safety # of {} fpr time {}.", safety, i);
+            println!("");
+        }
+        i += 1;
+        if i > 10000 {
+            break;
+        }
+    }
 }
 
 fn load_robots(path: &str) -> Vec<Robot> {
@@ -196,12 +217,10 @@ fn map_robots(robots: &Vec<Robot>) -> Map {
             map.chars[index] = char::from_digit(n + 1, 10).unwrap();
         }
     }
-    map.print();
-    println!("");
     map
 }
 
-fn quadrant_count(robots: &Vec<Robot>, map: &Map) {
+fn quadrant_count(robots: &Vec<Robot>, map: &Map) -> u32 {
     let space = get_space(robots);
     let mut qc = (0, 0, 0, 0);
     let mut ignored = 0;
@@ -225,7 +244,6 @@ fn quadrant_count(robots: &Vec<Robot>, map: &Map) {
             ignored += n;
         }
     }
-    println!("Quadrant count: {:?} - {} ignored", qc, ignored);
-    println!("Safety factor: {}", qc.0 * qc.1 * qc.2 * qc.3);
-    println!("");
+    let result = qc.0 * qc.1 * qc.2 * qc.3;
+    result
 }
