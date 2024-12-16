@@ -1,3 +1,4 @@
+use core::panic;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -192,17 +193,16 @@ impl Map {
 
 fn main() {
     part1();
-    part2();
+    //part2();
 }
 
 fn part1() {
     let (mut map, moves) = load_input("input.txt");
-    let mut robot_location = map.find_first('@').unwrap();
     // println!("Initial state:");
     // map.print();
     // println!("");
     for dir in &moves {
-        robot_location = move_object(&mut map, *dir, robot_location);
+        exec_move(&mut map, *dir);
         // println!("{}", dir);
         // map.print();
         // println!("");
@@ -219,7 +219,7 @@ fn part2() {
     new_map.print();
     println!("");
     for dir in &moves {
-        robot_location = move_object(&mut new_map, *dir, robot_location);
+        exec_move(&mut map, *dir);
         println!("{}", dir);
         new_map.print();
         println!("");
@@ -251,6 +251,7 @@ fn load_input(path: &str) -> (Map, Vec<char>) {
                 map.rows += 1;
             } else {
                 // append moves
+                s = s.trim().to_string();
                 let mut string_chars: Vec<char> = s.chars().collect();
                 moves.append(&mut string_chars);
             }
@@ -261,89 +262,43 @@ fn load_input(path: &str) -> (Map, Vec<char>) {
     (map, moves)
 }
 
-fn can_move(map: &Map, dir: char, location: usize) -> Option<Vec<usize>> {
-    if dir == '>' {
-            let c = map.chars[location + 1];
-            if c == '#' {
-                None
-            } 
-            else if c == '.' {
-                let mut vec = Vec::new();
-                vec.push(location + 1);
-                Some(vec)
-            } 
-            else {
-                let result = can_move(map, dir, location + 1);
-                if !result.is_none() {
-                    let mut vec = result.unwrap();
-                    vec.push(location + 1);
-                    Some(vec)
-                } else {
-                    None
-                }
-            }
+fn exec_move(map: &mut Map, dir: char) {
+    let mut dx = 0_i8;
+    let mut dy = 0_i8;
+    match dir {
+        '^' => dy = -(map.cols as i8),
+        '>' => dx = 1,
+        'v' => dy = map.cols as i8,
+        '<' => dx = -1,
+        _ => panic!("Unexpected direction: '{}'", dir)
     }
-    else {
-        None
-    }
-}
-
-fn move_object(map: &mut Map, dir: char, location: usize) -> usize {
-    let mut new_location = location;
-    if dir == '^' {
-        // get the next location up
-        new_location = map.index_up(location).unwrap();
-    } else if dir == '>' {
-        new_location = map.index_right(location).unwrap();
-    } else if dir == 'v' {
-        new_location = map.index_down(location).unwrap();
-    } else if dir == '<' {
-        new_location = map.index_left(location).unwrap();
-    }
-    // get the character in the new location
-    let c = map.chars[new_location];
-    // if the new location is open space, then move the object and return that location!
-    if c == '.' {
-        // go ahead and move what is in location to new_location
-        map.chars[new_location] = map.chars[location];
-        map.chars[location] = '.';
-    }
-    // if the new location is a movable object
-    else if c == 'O' {
-        // then try and move that object in the same direction
-        let moved_obj_loc = move_object(map, dir, new_location);
-        // if it was not able to be moved, then we can't move this object too
-        if moved_obj_loc == new_location {
-            new_location = location;
-        } else {
-            map.chars[new_location] = map.chars[location];
-            map.chars[location] = '.';
+    // create a list of target locations which need to be moved if able
+    let mut targets: Vec<_> = Vec::new();
+    // get the location of our robot and add it to the targets list
+    let mut next_loc = map.find_first('@').unwrap();
+    targets.push(next_loc);
+    // initially, set our can-move flag to True
+    let mut can_move = true;
+    loop {
+        next_loc = (next_loc as i32 + dx as i32 + dy as i32) as usize;
+        match map.chars[next_loc] {
+        // if we hit a wall, then we can't move!
+        '#' => { can_move = false; break; },
+        // if we hit open space, we are good to go!
+        '.' => { targets.push(next_loc); break; },
+        // if we hit a box, add it to the targets list and continue checking
+        'O' => { targets.push(next_loc); },
+        _ => panic!("Unexpected map symbol: '{}'", map.chars[next_loc]),
         }
     }
-    // if the new location is a movable object
-    else if c == '[' || c == ']' {
-        // we need special log for up/down moves since a box is now 2 characters wide!
-        if dir == '^' || dir == 'v' {
-            // note that we can only get here when obj = '['
-            // for now, just disallow up/down moves by doing nothing
-            new_location = location;
-        } else {
-            // then try and move that object in the same direction
-            let moved_obj_loc = move_object(map, dir, new_location);
-            // if it was not able to be moved, then we can't move this object too
-            if moved_obj_loc == new_location {
-                new_location = location;
-            } else {
-                map.chars[new_location] = map.chars[location];
-                map.chars[location] = '.';
-            }
+    // if we exit and can still move, do so now
+    if can_move {
+        for i in (1..targets.len()).rev() {
+            let prev = (targets[i] as i32 - dx as i32 - dy as i32) as usize; 
+            map.chars[targets[i]] = map.chars[prev];
         }
+        map.chars[targets[0]] = '.';
     }
-    // otherwise, it must be blocking terrain, so no movement!
-    else {
-        new_location = location;
-    }
-    new_location
 }
 
 fn count_gps(map: &Map) -> usize {
