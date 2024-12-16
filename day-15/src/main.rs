@@ -193,7 +193,7 @@ impl Map {
 
 fn main() {
     part1();
-    //part2();
+    part2();
 }
 
 fn part1() {
@@ -212,17 +212,17 @@ fn part1() {
 
 fn part2() {
     // now, for part 2 wherein the map is doubled!
-    let (mut map, moves) = load_input("test-input-3.txt");
+    let (mut map, moves) = load_input("input.txt");
     let mut new_map = double_map(&map);
     let mut robot_location = new_map.find_first('@').unwrap();
-    println!("Initial state:");
-    new_map.print();
-    println!("");
+    // println!("Initial state:");
+    // new_map.print();
+    // println!("");
     for dir in &moves {
-        exec_move(&mut map, *dir);
-        println!("{}", dir);
-        new_map.print();
-        println!("");
+        exec_move(&mut new_map, *dir);
+        // println!("{}", dir);
+        // new_map.print();
+        // println!("");
     }
     println!("Part 2 sum of GPS coords: {}", count_gps(&new_map));
 }
@@ -275,29 +275,44 @@ fn exec_move(map: &mut Map, dir: char) {
     // create a list of target locations which need to be moved if able
     let mut targets: Vec<_> = Vec::new();
     // get the location of our robot and add it to the targets list
-    let mut next_loc = map.find_first('@').unwrap();
-    targets.push(next_loc);
+    let robot = map.find_first('@').unwrap();
+    targets.push(robot);
     // initially, set our can-move flag to True
     let mut can_move = true;
+    let mut index = 0;
     loop {
-        next_loc = (next_loc as i32 + dx as i32 + dy as i32) as usize;
+        let current_loc = targets[index];
+        let next_loc = (current_loc as i32 + dx as i32 + dy as i32) as usize;
         match map.chars[next_loc] {
         // if we hit a wall, then we can't move!
         '#' => { can_move = false; break; },
-        // if we hit open space, we are good to go!
-        '.' => { targets.push(next_loc); break; },
+        // if we hit open space, we are good to go - DO NADA!
+        '.' => { },
         // if we hit a box, add it to the targets list and continue checking
         'O' => { targets.push(next_loc); },
+        // if we hit a left box, add it to the targets list and its assocaited right-box and continue checking
+        '[' => { 
+            if !targets.contains(&next_loc) { targets.push(next_loc); }
+            if !targets.contains(&(next_loc + 1)) { targets.push(next_loc + 1); }
+            }
+        ']' => { 
+            if !targets.contains(&next_loc) { targets.push(next_loc); }
+            if !targets.contains(&(next_loc - 1)) { targets.push(next_loc - 1); }
+        }
         _ => panic!("Unexpected map symbol: '{}'", map.chars[next_loc]),
         }
+        index += 1;
+        if index == targets.len() { break; }
     }
     // if we exit and can still move, do so now
     if can_move {
-        for i in (1..targets.len()).rev() {
-            let prev = (targets[i] as i32 - dx as i32 - dy as i32) as usize; 
-            map.chars[targets[i]] = map.chars[prev];
+        for i in (0..targets.len()).rev() {
+            let current_loc = targets[i]; 
+            let next_loc = (current_loc as i32 + dx as i32 + dy as i32) as usize;
+            map.chars[next_loc] = map.chars[current_loc];
+            map.chars[current_loc] = '.';
         }
-        map.chars[targets[0]] = '.';
+        //map.chars[robot] = '.';
     }
 }
 
