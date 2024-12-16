@@ -79,12 +79,12 @@ impl Map {
     fn find_first(&self, search: char) -> Option<usize> {
         for (i, c) in self.chars.iter().enumerate() {
             if *c == search {
-                return Some(i)
+                return Some(i);
             }
         }
         None
     }
-    
+
     fn index_up(&self, index: usize) -> Option<usize> {
         if index >= self.cols && index < self.chars.len() {
             Some(index - self.cols)
@@ -140,7 +140,7 @@ impl Map {
             default
         }
     }
-    
+
     fn left(&self, index: usize, default: char) -> char {
         if let Some(index_lt) = self.index_left(index) {
             self.chars[index_lt]
@@ -189,7 +189,6 @@ impl Map {
         result
     }
 }
-
 
 fn main() {
     part1();
@@ -249,7 +248,7 @@ fn load_input(path: &str) -> (Map, Vec<char>) {
                 map.cols = s.len();
                 let mut string_chars: Vec<char> = s.chars().collect();
                 map.chars.append(&mut string_chars);
-                map.rows += 1;    
+                map.rows += 1;
             } else {
                 // append moves
                 let mut string_chars: Vec<char> = s.chars().collect();
@@ -260,6 +259,33 @@ fn load_input(path: &str) -> (Map, Vec<char>) {
         }
     }
     (map, moves)
+}
+
+fn can_move(map: &Map, dir: char, location: usize) -> Option<Vec<usize>> {
+    if dir == '>' {
+            let c = map.chars[location + 1];
+            if c == '#' {
+                None
+            } 
+            else if c == '.' {
+                let mut vec = Vec::new();
+                vec.push(location + 1);
+                Some(vec)
+            } 
+            else {
+                let result = can_move(map, dir, location + 1);
+                if !result.is_none() {
+                    let mut vec = result.unwrap();
+                    vec.push(location + 1);
+                    Some(vec)
+                } else {
+                    None
+                }
+            }
+    }
+    else {
+        None
+    }
 }
 
 fn move_object(map: &mut Map, dir: char, location: usize) -> usize {
@@ -281,7 +307,7 @@ fn move_object(map: &mut Map, dir: char, location: usize) -> usize {
         // go ahead and move what is in location to new_location
         map.chars[new_location] = map.chars[location];
         map.chars[location] = '.';
-    } 
+    }
     // if the new location is a movable object
     else if c == 'O' {
         // then try and move that object in the same direction
@@ -291,24 +317,25 @@ fn move_object(map: &mut Map, dir: char, location: usize) -> usize {
             new_location = location;
         } else {
             map.chars[new_location] = map.chars[location];
-            map.chars[location] = '.';    
+            map.chars[location] = '.';
         }
     }
     // if the new location is a movable object
     else if c == '[' || c == ']' {
         // we need special log for up/down moves since a box is now 2 characters wide!
         if dir == '^' || dir == 'v' {
+            // note that we can only get here when obj = '['
             // for now, just disallow up/down moves by doing nothing
             new_location = location;
         } else {
             // then try and move that object in the same direction
-            let mut moved_obj_loc = move_object(map, dir, new_location);
+            let moved_obj_loc = move_object(map, dir, new_location);
             // if it was not able to be moved, then we can't move this object too
             if moved_obj_loc == new_location {
                 new_location = location;
             } else {
                 map.chars[new_location] = map.chars[location];
-                map.chars[location] = '.';    
+                map.chars[location] = '.';
             }
         }
     }
@@ -336,11 +363,19 @@ fn double_map(map: &Map) -> Map {
     let mut result = Map::from_cols_rows(map.cols * 2, map.rows);
     for (i, c) in map.chars.iter().enumerate() {
         match *c {
-            '.' | '#' => { result.chars[i * 2] = *c; result.chars[i * 2 + 1] = *c;  },
-            'O' => { result.chars[i * 2] = '['; result.chars[i * 2 + 1] = ']';  }
-            '@' => { result.chars[i * 2] = '@'; result.chars[i * 2 + 1] = '.';  }
-            _ => {},
-            
+            '.' | '#' => {
+                result.chars[i * 2] = *c;
+                result.chars[i * 2 + 1] = *c;
+            }
+            'O' => {
+                result.chars[i * 2] = '[';
+                result.chars[i * 2 + 1] = ']';
+            }
+            '@' => {
+                result.chars[i * 2] = '@';
+                result.chars[i * 2 + 1] = '.';
+            }
+            _ => {}
         }
     }
     result
