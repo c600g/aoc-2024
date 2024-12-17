@@ -228,7 +228,7 @@ fn compute_path_cost(path: &Vec<(usize, Facing)>) -> usize {
         if path[i].1 == path[i - 1].1 {
             result += 1;
         } else {
-            result += 1000;
+            result += 1001;
         }
     }
     result
@@ -269,6 +269,7 @@ fn find_paths(map: &Map) {
         let next_steps = find_allowed_steps(&map, *index, *facing, &paths[0]);
         // if we have no more next steps, then we are done with this path
         if next_steps.len() == 0 {
+            // before removing the path, maybe we should block off as much of the map as possible???
             paths.remove(0);
         } else if next_steps.len() == 1 {
             paths[0].push(next_steps[0]);
