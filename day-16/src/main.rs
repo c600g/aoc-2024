@@ -205,7 +205,7 @@ fn main() {
 }
 
 fn part1() {
-    let map = Map::from_file("test-input-1.txt");
+    let map = Map::from_file("input.txt");
     println!("Initial state:");
     map.print();
     println!("");
@@ -222,24 +222,43 @@ fn part2() {
     println!("Part 2 minimum path value: {}", 0);
 }
 
+fn compute_path_cost(path: &Vec<(usize, Facing)>) -> usize {
+    let mut result = 0;
+    for i in 1..path.len() {
+        if path[i].1 == path[i - 1].1 {
+            result += 1;
+        } else {
+            result += 1000;
+        }
+    }
+    result
+}
+
 fn find_paths(map: &Map) {
     let mut paths: Vec<Vec<(usize, Facing)>> = Vec::new();
     let index  = map.find_first('S').unwrap();
     let facing = Facing::East;
-
+    let mut min_cost: Option<usize> = None;
     let mut path: Vec<(usize, Facing)> = Vec::new();
     path.push((index, facing));
     paths.push(path);
 
-    let mut i = 0;      // path # we are looking at
     loop {
-        let (index, facing) = paths[i].last().unwrap();        
+        let (index, facing) = paths[0].last().unwrap();        
         
         // if we have reached the exit, then we are done with this path!
         if map.chars[*index] == 'E' {
-            println!("Found exit! {:?}", paths[i]);
-            i += 1;
-            if i == paths.len() {
+            let cost = compute_path_cost(&paths[0]);
+            if min_cost.is_none() {
+                min_cost = Some(cost);
+            } else {
+                if min_cost.unwrap() > cost {
+                    min_cost = Some(cost);
+                }
+            }
+            println!("Found exit: len = {}, cost = {}, min cost = {:?}", paths[0].len(), cost, min_cost);
+            paths.remove(0);
+            if paths.len() == 0 {
                 break;
             } else {
                 continue;
@@ -247,44 +266,69 @@ fn find_paths(map: &Map) {
         }
 
         // otherwise, try and get next steps
-        let next_steps = find_allowed_steps(&map, *index, *facing);
+        let next_steps = find_allowed_steps(&map, *index, *facing, &paths[0]);
         // if we have no more next steps, then we are done with this path
         if next_steps.len() == 0 {
-            i += 1;
-            paths[i].clear();
+            paths.remove(0);
         } else if next_steps.len() == 1 {
-            paths[i].push(next_steps[0]);
+            paths[0].push(next_steps[0]);
         } else {
             for k in 1..next_steps.len() {
-                let mut new_path = paths[i].clone();
+                let mut new_path = paths[0].clone();
                 new_path.push(next_steps[k]);
                 paths.push(new_path);
             }
             // finally tack on the first next_step to our current path
-            paths[i].push(next_steps[0]);
+            paths[0].push(next_steps[0]);
         }
-        if i == paths.len() {
+        if paths.len() == 0 {
             break;
         }
     }
-    println!("\nTotal paths tried: {}", i);
-
 }
 
-fn find_allowed_steps(map: &Map, index: usize, facing: Facing) -> Vec<(usize, Facing)> {
+fn find_allowed_steps(map: &Map, index: usize, facing: Facing, path: &Vec<(usize, Facing)>) -> Vec<(usize, Facing)> {
     let mut result: Vec<(usize, Facing)> = Vec::new();
 
     if map.up(index, '#') != '#' && facing != Facing::South {
-        result.push((map.index_up(index).unwrap(), Facing::North));
+        let next = map.index_up(index).unwrap();
+        let mut found = false;
+        for (loc, _) in path {
+            if *loc == next { found = true; break; }
+        }
+        if !found {
+            result.push((next, Facing::North));
+        }
     }
     if map.right(index, '#') != '#' && facing != Facing::West {
-        result.push((map.index_right(index).unwrap(), Facing::East));
+        let next = map.index_right(index).unwrap();
+        let mut found = false;
+        for (loc, _) in path {
+            if *loc == next { found = true; break; }
+        }
+        if !found {
+            result.push((next, Facing::East));
+        }
     }
     if map.down(index, '#') != '#' && facing != Facing::North {
-        result.push((map.index_down(index).unwrap(), Facing::South));
+        let next = map.index_down(index).unwrap();
+        let mut found = false;
+        for (loc, _) in path {
+            if *loc == next { found = true; break; }
+        }
+        if !found {
+            result.push((next, Facing::South));
+        }
     }
     if map.left(index, '#') != '#' && facing != Facing::East {
-        result.push((map.index_left(index).unwrap(), Facing::West));
+        let next = map.index_left(index).unwrap();
+        let mut found = false;
+        for (loc, _) in path {
+            if *loc == next { found = true; break; }
+        }
+        if !found {
+            result.push((next, Facing::West));
+        }
     }
     result
 }
