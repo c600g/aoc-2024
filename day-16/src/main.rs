@@ -205,7 +205,7 @@ fn main() {
 }
 
 fn part1() {
-    let map = Map::from_file("input.txt");
+    let map = Map::from_file("test-input-1.txt");
     println!("Initial state:");
     map.print();
     println!("");
