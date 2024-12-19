@@ -6,13 +6,12 @@ struct Computer {
     c: usize,          // C register
     ip: usize,         // instruction pointer
     ram: Vec<u8>,      // contents of RAM
-    stdout: String,    // standard output
-    max_stdout: usize, // maximum size of stdout buffer, if > 0
+    stdout: Vec<u8>,   // standard output
 }
 
 impl Computer {
     fn new(a: usize, b: usize, c: usize, program: Vec<u8>) -> Self {
-        Self {a: a, b: b, c: c, ip: 0, ram: program, stdout: String::new(), max_stdout: 0, }
+        Self {a: a, b: b, c: c, ip: 0, ram: program, stdout: Vec::new(), }
     }
 
     fn exec(&mut self) {
@@ -61,17 +60,7 @@ impl Computer {
             3 => if self.a != 0 { self.ip = operand as usize; }                     // jnz - jump to address = operand if A is != 0
             4 => self.b = self.b ^ self.c,                                          // bxs - bitwise XOR B & C => B
             5 => {
-                if self.stdout.len() > 0 {
-                    self.stdout.push_str(",");
-                }
-                let s = format!("{}", self.fetch_combo_operand_value(operand) % 8);
-                self.stdout.push_str(&s);
-                // // check for max stdout
-                // if self.max_stdout > 0 && self.stdout.len() > self.max_stdout {
-                //     // append a -1 to the end of stdout and then halt
-                //     self.stdout.push_str(",-1");
-                //     self.ip = self.ram.len();
-                // }
+                self.stdout.push((self.fetch_combo_operand_value(operand) % 8) as u8);
             }
             ,   // out - print out combo_op mod 8
             6 => self.b = self.a >> self.fetch_combo_operand_value(operand) as u32, // bdv - shr B combo_op => B
@@ -132,35 +121,33 @@ fn main() {
 }
 
 fn part1() {
+    println!("\nPart 1:");
     let code = vec![2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0];
     let mut hal = Computer::new(46337277, 0, 0, code);
-    println!("\nPart 1:");
     hal.exec();
-    println!("{}", hal.stdout);
+    println!("{:?}", hal.stdout);
 }
 
 fn part2() {
+    println!("\nPart 2:");
     let code = vec![2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0];
     let mut hal = Computer::new(0, 0, 0, code);
-    hal.max_stdout = hal.ram.len() * 2;
-    println!("\nPart 2:");
-    hal.disassemble();
-    // println!("\nHal is running trying to find A such that stdout is the same as RAM...");
-    // let a = 37221261688308;
-    // loop {
-    //     hal.a = a;
-    //     hal.b = 0;
-    //     hal.c = 0;
-    //     if a % 1000 == 0 { print!("{}..", a); }
-    //     hal.exec();
-    //     println!("stdout: {}", hal.stdout);
-    //     if hal.stdout == "2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0" {
-    //         println!("\nFound it!: {}\n", a);
-    //     }
-    //     break;
-    // }
-    // println!("\n\nPart 2 stdout:\n{}\n\n", hal.stdout);
-    //println!("{:?}\n", hal);
+    hal.a = 202991746427434;
+    hal.exec();
+    println!("   code: {:?}", hal.ram);
+    println!(" stdout: {:?}", hal.stdout);
+}
+
+fn check_partial_solution(check: &Vec<u8>) {
+    let code = vec![2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0];
+    let mut hal = Computer::new(0, 0, 0, code);
+    for i in 0..check.len() {
+        // build up our test a value with the 3 bit values we have
+        hal.a = hal.a + ((check[i] as usize) << ((15-i) * 3));
+    }
+    print!("A: {} ", hal.a);
+    hal.exec();
+    println!("{:?} => {:?}", check, hal.stdout);
 }
 
 #[cfg(test)]
@@ -180,7 +167,8 @@ mod tests {
         let code = vec![5,0,5,1,5,4];
         let mut hal = Computer::new(10, 0, 0, code);
         hal.exec();
-        assert_eq!(hal.stdout, "0,1,2");
+        let s = format!("{:?}", hal.stdout);
+        assert_eq!(s, "[0, 1, 2]");
     }
 
     #[test]
@@ -188,7 +176,8 @@ mod tests {
         let code = vec![0,1,5,4,3,0];
         let mut hal = Computer::new(2024, 0, 0, code);
         hal.exec();
-        assert_eq!(hal.stdout, "4,2,5,6,7,7,7,7,3,1,0");
+        let s = format!("{:?}", hal.stdout);
+        assert_eq!(s, "[4, 2, 5, 6, 7, 7, 7, 7, 3, 1, 0]");
         assert_eq!(hal.a, 0);
     }
 
@@ -213,7 +202,8 @@ mod tests {
         let code = vec![0,1,5,4,3,0];
         let mut hal = Computer::new(729, 0, 0, code);
         hal.exec();
-        assert_eq!(hal.stdout, "4,6,3,5,6,3,5,2,1,0");
+        let s = format!("{:?}", hal.stdout);
+        assert_eq!(s, "[4, 6, 3, 5, 6, 3, 5, 2, 1, 0]");
     }
 
     #[test]
@@ -221,7 +211,8 @@ mod tests {
         let code = vec![0,3,5,4,3,0];
         let mut hal = Computer::new(117440, 0, 0, code);
         hal.exec();
-        assert_eq!(hal.stdout, "0,3,5,4,3,0");
+        let s = format!("{:?}", hal.stdout);
+        assert_eq!(s, "[0, 3, 5, 4, 3, 0]");
     }
 
 }
