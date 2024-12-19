@@ -133,6 +133,7 @@ fn part2() {
     let code = vec![2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0];
     let mut hal = Computer::new(0, 0, 0, code);
     hal.a = 202991746427434;
+    hal.disassemble();
     hal.exec();
     println!("   code: {:?}", hal.ram);
     println!(" stdout: {:?}", hal.stdout);
@@ -175,7 +176,6 @@ mod tests {
     fn part1_test3() {
         let code = vec![0,1,5,4,3,0];
         let mut hal = Computer::new(2024, 0, 0, code);
-        hal.exec();
         let s = format!("{:?}", hal.stdout);
         assert_eq!(s, "[4, 2, 5, 6, 7, 7, 7, 7, 3, 1, 0]");
         assert_eq!(hal.a, 0);
