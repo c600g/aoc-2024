@@ -1,17 +1,18 @@
 
 #[derive(Debug)]
 struct Computer {
-    a: usize,       // A register
-    b: usize,       // B register
-    c: usize,       // C register
-    ip: usize,      // instruction pointer
-    ram: Vec<u8>,   // contents of RAM
-    stdout: String, // standard output
+    a: usize,          // A register
+    b: usize,          // B register
+    c: usize,          // C register
+    ip: usize,         // instruction pointer
+    ram: Vec<u8>,      // contents of RAM
+    stdout: String,    // standard output
+    max_stdout: usize, // maximum size of stdout buffer, if > 0
 }
 
 impl Computer {
     fn new(a: usize, b: usize, c: usize, program: Vec<u8>) -> Self {
-        Self {a: a, b: b, c: c, ip: 0, ram: program, stdout: String::new() }
+        Self {a: a, b: b, c: c, ip: 0, ram: program, stdout: String::new(), max_stdout: 0, }
     }
 
     fn exec(&mut self) {
@@ -54,33 +55,112 @@ impl Computer {
 
     fn process_instruction(&mut self, opcode: u8, operand: u8) {
         match opcode {
-            0 => self.a = self.a / 2_usize.pow(self.fetch_combo_operand_value(operand) as u32), // adv - divide A register by 2^combo_op => A
-            1 => self.b = self.b ^ operand as usize,                               // bxl - bitwise XOR of B register by op => B
-            2 => self.b = self.fetch_combo_operand_value(operand) & 7,             // bst - combo_op & 7 => B
-            3 => if self.a != 0 { self.ip = operand as usize; }                    // jnz - jump to address = operand if A is != 0
-            4 => self.b = self.b ^ self.c,                                         // bxs - bitwise XOR B & C => B
+            0 => self.a = self.a >> self.fetch_combo_operand_value(operand) as u32, // adv - divide A register by 2^combo_op => A
+            1 => self.b = self.b ^ operand as usize,                                // bxl - bitwise XOR of B register by op => B
+            2 => self.b = self.fetch_combo_operand_value(operand) % 8,              // bst - combo_op % 8 => B
+            3 => if self.a != 0 { self.ip = operand as usize; }                     // jnz - jump to address = operand if A is != 0
+            4 => self.b = self.b ^ self.c,                                          // bxs - bitwise XOR B & C => B
             5 => {
                 if self.stdout.len() > 0 {
                     self.stdout.push_str(",");
                 }
-                let s = format!("{}", self.fetch_combo_operand_value(operand) & 7);
+                let s = format!("{}", self.fetch_combo_operand_value(operand) % 8);
                 self.stdout.push_str(&s);
+                // // check for max stdout
+                // if self.max_stdout > 0 && self.stdout.len() > self.max_stdout {
+                //     // append a -1 to the end of stdout and then halt
+                //     self.stdout.push_str(",-1");
+                //     self.ip = self.ram.len();
+                // }
             }
             ,   // out - print out combo_op mod 8
-            6 => self.b = self.a / 2_usize.pow(self.fetch_combo_operand_value(operand) as u32), // bdv - divide B register by 2^combo_op => B
-            7 => self.c = self.a / 2_usize.pow(self.fetch_combo_operand_value(operand) as u32), // cdv - divide C register by 2^combo_op => C
+            6 => self.b = self.a >> self.fetch_combo_operand_value(operand) as u32, // bdv - shr B combo_op => B
+            7 => self.c = self.a >> self.fetch_combo_operand_value(operand) as u32, // cdv - shr C combo_op => C
             _ => println!("INVALID OPCODE: {}\n", opcode),
+        }
+    }
+
+    fn opcode_as_string(opcode: u8) -> String {
+        match opcode {
+            0 | 6 | 7=> return "shr".to_string(),
+            1 | 4 => return "xor".to_string(),
+            2 => return "mod".to_string(),
+            3 => return "jnz".to_string(),
+            5 => return "out".to_string(),
+            _ => return "???".to_string(),
+        }
+    }
+
+    fn operand_as_string(opcode: u8, operand: u8) -> String {
+        match opcode {
+            0 => return format!("A, {}\t=> A", Self::combo_operand_as_string(operand)),
+            1 => return format!("B, #{}\t=> B", operand),
+            2 => return format!("{}, 8\t=> B", Self::combo_operand_as_string(operand)),
+            3 => return format!("${:04}", operand),
+            4 => return "B, C\t=> B".to_string(),
+            5 => return Self::combo_operand_as_string(operand),
+            6 => return format!("A, {}\t=> B", Self::combo_operand_as_string(operand)),
+            7 => return format!("A, {}\t=> C", Self::combo_operand_as_string(operand)),
+            _ => return "???".to_string(),
+        }
+    }
+
+    fn combo_operand_as_string(operand: u8) -> String {
+        match operand {
+            0..=3 => return format!("#{}", operand),
+            4 => return "A".to_string(),
+            5 => return "B".to_string(),
+            6 => return "C".to_string(),
+            _ => return "?".to_string(),
+        }
+    }
+
+    fn disassemble(&self) {
+        for i in 0..self.ram.len() / 2 {
+            // get our opcode and operand
+            let opcode = self.ram[i * 2];
+            let operand = self.ram[i * 2 + 1];
+            println!("{:04}: {:02} {:02}\t{}\t{}", i * 2, opcode, operand, Self::opcode_as_string(opcode), Self::operand_as_string(opcode, operand));
         }
     }
 
 }
 
 fn main() {
+    part1();
+    part2();
+}
+
+fn part1() {
     let code = vec![2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0];
     let mut hal = Computer::new(46337277, 0, 0, code);
-    println!("\nHal is running...");
+    println!("\nPart 1:");
     hal.exec();
-    println!("stdout:\n{}\n\n", hal.stdout);
+    println!("{}", hal.stdout);
+}
+
+fn part2() {
+    let code = vec![2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0];
+    let mut hal = Computer::new(0, 0, 0, code);
+    hal.max_stdout = hal.ram.len() * 2;
+    println!("\nPart 2:");
+    hal.disassemble();
+    // println!("\nHal is running trying to find A such that stdout is the same as RAM...");
+    // let a = 37221261688308;
+    // loop {
+    //     hal.a = a;
+    //     hal.b = 0;
+    //     hal.c = 0;
+    //     if a % 1000 == 0 { print!("{}..", a); }
+    //     hal.exec();
+    //     println!("stdout: {}", hal.stdout);
+    //     if hal.stdout == "2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0" {
+    //         println!("\nFound it!: {}\n", a);
+    //     }
+    //     break;
+    // }
+    // println!("\n\nPart 2 stdout:\n{}\n\n", hal.stdout);
+    //println!("{:?}\n", hal);
 }
 
 #[cfg(test)]
